@@ -12,15 +12,13 @@ try {
     $json = file_get_contents('php://input');
     // Converts it into a PHP object 
     $data = json_decode($json, true);
-
-    // print_r($data);
-    // print_r($_SESSION);
-    // var_dump(($data['ReservId'] == $ReservId), ($data['KeySess'] == $ReservId), ($_SERVER['HTTP_X_APIKEY'] == $XApiKey) );
     
     $ReservId = $data['ReservId'] ?? 2;
     $Win      = $data['Win'] ?? 10000;
     $XApiKey  = MD5("$Win:$SecurityKey:$ReservId");
-    // var_dump($_SERVER['HTTP_X_APIKEY'], $XApiKey);
+    // print_r($data);
+    // print_r($_SESSION);
+    // var_dump(($data['ReservId'] == $ReservId), ($_SERVER['HTTP_X_APIKEY'] == $XApiKey) );
     $Win /= 100;
 
     if ($_SERVER['HTTP_X_APIKEY'] != $XApiKey){
@@ -37,7 +35,12 @@ try {
      * If the balance has not been deposited by this ReservId,
      * the Win amount deposit to the user's balance and if successful in the JSON is returned:
      */
-    if (!isset($_SESSION['deposited'][$ReservId])) {
+
+    /**
+     * If a return has been made earlier (https://YOUR_SERVICE.com/api/rollback) for the all amount of the reserve,
+     *  then in this case ReservId method of the partner https://YOUR_SERVICE.com/api/deposit will not be called!
+     */
+    if (!isset($_SESSION['deposited'][$ReservId]) && !isset($_SESSION['rolledback'][$ReservId])) {
         $balance += $Win;
         $_SESSION['balance']  = $balance;
         $_SESSION['deposited'][$ReservId] = $Win;
@@ -57,4 +60,4 @@ try {
 }
 
 // unset($_SESSION['deposited']);
-session_destroy();
+// session_destroy();

@@ -13,17 +13,15 @@ try {
     // Converts it into a PHP object 
     $data = json_decode($json, true);
 
-    // print_r($data);
-    // var_dump($_SERVER['HTTP_X_APIKEY'], $XApiKey);
-    // var_dump(($data['ReservId'] == $ReservId), ($data['KeySess'] == $ReservId), ($_SERVER['HTTP_X_APIKEY'] == $XApiKey) );
-
     $ReservId = $data['ReservId'] ?? 2;
     $Sum      = $data['Sum'] ?? 10000;
     $XApiKey  = MD5("$Sum:$SecurityKey:$ReservId");
+    // print_r($data);
     // var_dump($_SERVER['HTTP_X_APIKEY'], $XApiKey);
+    // var_dump(($data['ReservId'] == $ReservId), ($_SERVER['HTTP_X_APIKEY'] == $XApiKey) );
     $Sum /= 100;
 
-    if ($_SERVER['HTTP_X_APIKEY'] != $XApiKey){
+    if ($_SERVER['HTTP_X_APIKEY'] != $XApiKey) {
         $response = '{
             "ErrorId": 1,
             "ErrorDescription": "User not found or blocked, incorrect ReservId, KeySess or X-APIKEY",
@@ -38,28 +36,28 @@ try {
      * then Sum deposit to back to the user's balance and in case of successful enrollment the JSON is returned:
      */
 
-    $rolledback = 0;
-
-    if (!isset($_SESSION['rolledback'])) {
-        $balance = ($_SESSION['balance'] + $Sum);
-        $_SESSION['balance'] = $balance;
-        $rolledback++;
-        $_SESSION['rolledback'] = $rolledback;
+    /**
+     * If a return has been made earlier (https://YOUR_SERVICE.com/api/rollback) for the all amount of the reserve,
+     *  then in this case ReservId method of the partner https://YOUR_SERVICE.com/api/deposit will not be called!
+     */
+    if (!isset($_SESSION['rolledback'][$ReservId]) && 
+        isset($_SESSION['deposited'][$ReservId]) && 
+        ($Sum >= $_SESSION['deposited'][$ReservId])) {
+        $balance += $Sum;
+        $_SESSION['balance']  = $balance;
+        $_SESSION['rolledback'][$ReservId] = $Sum;
+    } elseif (!isset($_SESSION['rolledback'][$ReservId]) && 
+            isset($_SESSION['deposited'][$ReservId]) && 
+            ($Sum < $_SESSION['deposited'][$ReservId])) {
+        $balance = ($_SESSION['deposited'][$ReservId] - $Sum);
+        $_SESSION['balance']  = $balance;
+        $_SESSION['rolledback'][$ReservId] = $Sum;
     }
+    // echo  $_SESSION['deposited'];exit;
+    // print_r($_SESSION);
+    $response = ["balance" => $balance];
+    echo json_encode($response);
 
-    if (($data['ReservId'] == $ReservId) &&
-        ($_SERVER['HTTP_X_APIKEY'] == $XApiKey)
-    ) {
-        $response = ["balance" => $balance];
-        echo json_encode($response);
-    } else {
-        $response = '{
-            "ErrorId": 1,
-            "ErrorDescription": "User not found or blocked, incorrect ReservId, KeySess or X-APIKEY",
-            "Balance": 0.00
-        }';
-        echo $response;
-    }
 } catch (Exception $ex) {
     $response = '{
         "ErrorId": 10,
