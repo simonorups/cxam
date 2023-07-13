@@ -1,4 +1,4 @@
-# cxam betonline apis
+# CXAM betonline apis
 The assignment to assimulate integration apis
 ## file structure
 ### index.php 
