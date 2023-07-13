@@ -18,8 +18,8 @@ try {
     // var_dump(($data['ReservId'] == $ReservId), ($data['KeySess'] == $ReservId), ($_SERVER['HTTP_X_APIKEY'] == $XApiKey) );
     
     $ReservId = $data['ReservId'] ?? 2;
-    $Win = $data['Win'] ?? 10000;
-    $XApiKey = MD5("$Win:$SecurityKey:$ReservId");
+    $Win      = $data['Win'] ?? 10000;
+    $XApiKey  = MD5("$Win:$SecurityKey:$ReservId");
     // var_dump($_SERVER['HTTP_X_APIKEY'], $XApiKey);
     $Win /= 100;
 
